@@ -20,7 +20,7 @@ if __name__ == "__main__":
     cursor.execute(postgres_insert_query, student_to_insert)
     uuid = cursor.fetchone()[0]
     print(uuid)
-    # connection.commit()
+    connection.commit()
     count = cursor.rowcount
     print(count, "Students created")
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
                     article += " " + paragraph.strip()
                 print(article)
                 cursor.execute(postgres_insert_query2, (title, tags, article, url2, uuid))
-                # connection.commit()
+                connection.commit()
             if m == n:
                 break
         i -= 1
