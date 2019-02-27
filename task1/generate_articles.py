@@ -1,6 +1,6 @@
 import requests
 from parsel import Selector
-import psycopg2
+from connnect.ConnectionDB import ConnectionDB
 
 if __name__ == "__main__":
     domen = "https://kulturologia.ru/%s"
@@ -8,19 +8,15 @@ if __name__ == "__main__":
     i = 596
     n = 30
     m = 0
-    connection = psycopg2.connect(user="postgres",
-                                  password="postgres",
-                                  host="127.0.0.1",
-                                  port="5432",
-                                  database="articles_db")
-    cursor = connection.cursor()
+    db = ConnectionDB()
+    cursor = db.cursor
     postgres_insert_query = "INSERT INTO public.students(name, surname, mygroup) VALUES (%s, %s, %s) RETURNING id"
     postgres_insert_query2 = "INSERT INTO public.articles(title, keywords, content, url, student) VALUES (%s, %s, %s, %s, %s)"
     student_to_insert = ("Наталья", "Коргутлова", "11-501")
     cursor.execute(postgres_insert_query, student_to_insert)
     uuid = cursor.fetchone()[0]
     print(uuid)
-    connection.commit()
+    db.commit()
     count = cursor.rowcount
     print(count, "Students created")
 
@@ -45,10 +41,8 @@ if __name__ == "__main__":
                     article += " " + paragraph.strip()
                 print(article)
                 cursor.execute(postgres_insert_query2, (title, tags, article, url2, uuid))
-                connection.commit()
+                db.commit()
             if m == n:
                 break
         i -= 1
-
-    cursor.close()
-    connection.close()
+    db.close()
