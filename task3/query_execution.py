@@ -9,16 +9,17 @@ cursor = db.cursor
 
 
 def preprocessing_query(sent):
-    list = []
     m = Mystem()
     stop_words = stopwords.words('russian')
     stop_words.extend([',', '.', '—', '–', '-', '«', '»', '?', '!', '(', ')', ';', ':', '”', '“', '\''])
     words = word_tokenize(sent)
+    sent = ""
     for w in words:
         word = w.lower()
         if word not in stop_words:
-            list.append(m.lemmatize(word)[0])
-    return list
+            sent += word + " "
+
+    return m.lemmatize(sent)
 
 
 def execute(text):
