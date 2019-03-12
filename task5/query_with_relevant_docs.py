@@ -9,6 +9,8 @@ db = ConnectionDB()
 cursor = db.cursor
 count_docs = "SELECT id FROM articles"
 select_needed_docs = "SELECT distinct(article_id) FROM public.article_term WHERE term_id in (%s)"
+select_docs_term_count = "SELECT count(distinct(article_id, term)) FROM public.words_mystem WHERE term=%s"
+query_id = "SELECT count(distinct(article_id, term)) FROM public.words_mystem WHERE term=(SELECT  term_text FROM public.term_list WHERE term_id=%s)"
 cursor.execute(count_docs)
 documents = cursor.fetchall()
 D = len(documents)
@@ -18,16 +20,17 @@ def cos_measure(a, b):
     sum = 0
     power_a = 0
     power_b = 0
-    for i in range(len(a)):
-        sum += a[i] * b[i]
-        power_a += a[i] * a[i]
+    len_a = len(a)
+    for i in range(len(b)):
+        if i < len_a:
+            sum += a[i] * b[i]
+            power_a += a[i] * a[i]
         power_b += b[i] * b[i]
     return sum / (math.sqrt(power_a) * math.sqrt(power_b))
 
 
-def get_idf(term):
-    select_docs_term_count = "SELECT count(distinct(article_id, term)) FROM public.words_mystem WHERE term=%s"
-    cursor.execute(select_docs_term_count, [term])
+def get_idf(term, select):
+    cursor.execute(select, [term])
     small_d = int(cursor.fetchall()[0][0])
     idf = np.log(D / small_d)
     return idf
@@ -37,6 +40,12 @@ def get_id_term(term):
     select_term = "SELECT term_id FROM public.term_list WHERE term_text=%s"
     cursor.execute(select_term, [term])
     return cursor.fetchall()[0][0]
+
+
+def get_doc_term(id):
+    select_term = "SELECT term_id FROM public.article_term WHERE article_id=%s"
+    cursor.execute(select_term, [id])
+    return cursor.fetchall()
 
 
 def get_idf_term_doc(doc, term, i):
@@ -64,7 +73,7 @@ if __name__ == "__main__":
     docs_dict = {}
 
     for q in query:
-        query_vector.append(get_idf(q))
+        query_vector.append(get_idf(q, select_docs_term_count))
         terms_id.append(get_id_term(q))
     cursor.execute(select_needed_docs % ",".join('\'{0}\''.format(s) for s in terms_id))
 
@@ -77,6 +86,10 @@ if __name__ == "__main__":
 
     result = []
     for key in docs_dict.keys():
+        terms = get_doc_term(key)
+        for t in terms:
+            if t not in terms_id:
+                docs_dict.get(key).append(get_idf(t, query_id))
         result.append((key, cos_measure(query_vector, docs_dict.get(key))))
     result.sort(key=lambda x: x[1])
     result = list(reversed(result))[:10]
