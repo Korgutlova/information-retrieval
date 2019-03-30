@@ -16,6 +16,7 @@ D = len(documents)
 cursor.execute(count_terms)
 avgdl = cursor.fetchall()[0][0] / D
 
+
 def get_len(id):
     select_term = "SELECT term FROM public.words_mystem WHERE article_id=%s"
     cursor.execute(select_term, [id])
